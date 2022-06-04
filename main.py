@@ -1,4 +1,5 @@
 from cmath import log
+from email.policy import default
 from unicodedata import category
 from flask import Flask, request, jsonify, make_response
 from flask_sqlalchemy import SQLAlchemy
@@ -25,7 +26,7 @@ class Users(db.Model):
 
 class Shoes(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     category = db.Column(db.String(50), nullable=False)
     name = db.Column(db.String(50), unique=True, nullable=False)
     price = db.Column(db.Integer)
@@ -58,8 +59,11 @@ def token_required(f):
 def signup_user():  
     data = request.get_json()  
     hashed_password = generate_password_hash(data['password'], method='sha256')
+    isAdmin = False
+    if (data["username"] == "admin"):
+        isAdmin = True
  
-    new_user = Users(public_id=str(uuid.uuid4()), name=data['username'], password=hashed_password, admin=False) 
+    new_user = Users(public_id=str(uuid.uuid4()), name=data['username'], password=hashed_password, admin=isAdmin) 
     db.session.add(new_user)  
     db.session.commit()    
 
@@ -102,14 +106,16 @@ def get_all_users():
     return jsonify({'users': result})
 
 
-@app.route('/buyed_shoes', methods=['POST'])
+@app.route('/shoes', methods=['POST'])
 @token_required
 def create_shoes(current_user):
-    print(current_user)
+    if(not current_user.admin):
+        return jsonify({'message' : 'you`re not admin'})
 
     data = request.get_json() 
 
-    new_shoes = Shoes(name=data['name'], category=data['category'], price=data['price'], user_id=current_user.id)  
+    # new_shoes = Shoes(name=data['name'], category=data['category'], price=data['price'], user_id=current_user.id)
+    new_shoes = Shoes(name=data['name'], category=data['category'], price=data['price'])  
     db.session.add(new_shoes)   
     db.session.commit()   
 
@@ -118,9 +124,27 @@ def create_shoes(current_user):
 
 @app.route('/buyed-shoes', methods=['GET'])
 @token_required
-def get_shoes(current_user):
+def get_buyed_shoes(current_user):
 
     all_shoes = Shoes.query.filter_by(user_id=current_user.id).all()
+
+    output = []
+    for shoes in all_shoes:
+        shoes_data = {}
+        shoes_data['id'] = shoes.id
+        shoes_data['name'] = shoes.name
+        shoes_data['category'] = shoes.category
+        shoes_data['price'] = shoes.price
+        output.append(shoes_data)
+
+    return jsonify({'data' : output})
+
+
+
+@app.route('/shoes', methods=['GET'])
+def get_shoes():
+
+    all_shoes = Shoes.query.all()
 
     output = []
     for shoes in all_shoes:
@@ -137,6 +161,8 @@ def get_shoes(current_user):
 @app.route('/shoes/<shoes_id>', methods=['DELETE'])
 @token_required
 def delete_shoes(current_user, shoes_id):  
+    if(not current_user.admin):
+        return jsonify({'message' : 'you`re not admin'})
     shoes = Shoes.query.filter_by(id=shoes_id, user_id=current_user.id).first()   
     if not shoes:   
         return jsonify({'message': 'shoes does not exist'})   
