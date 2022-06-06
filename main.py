@@ -8,9 +8,10 @@ import uuid
 import jwt
 import datetime
 from functools import wraps
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-
+cors = CORS(app)
 app.config['SECRET_KEY']='004f2af45d3a4e161a7dd2d17fdae46f'
 app.config['SQLALCHEMY_DATABASE_URI']='sqlite:///store.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
@@ -20,7 +21,7 @@ db = SQLAlchemy(app)
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.Integer)
-    name = db.Column(db.String(50))
+    name = db.Column(db.String(50), unique=True,)
     password = db.Column(db.String(50))
     admin = db.Column(db.Boolean)
 
@@ -56,8 +57,9 @@ def token_required(f):
 
 
 @app.route('/register', methods=['POST'])
+@cross_origin()
 def signup_user():  
-    data = request.get_json()  
+    data = request.get_json() 
     hashed_password = generate_password_hash(data['password'], method='sha256')
     isAdmin = False
     if (data["username"] == "admin"):
@@ -67,10 +69,13 @@ def signup_user():
     db.session.add(new_user)  
     db.session.commit()    
 
-    return jsonify({'message': 'registeration successfully'})
+    response = jsonify({'message': 'registeration successfully'})
+    
+    return response
 
 
 @app.route('/login', methods=['POST'])  
+@cross_origin()
 def login_user(): 
     auth = request.authorization
 
@@ -90,6 +95,7 @@ def login_user():
 
 
 @app.route('/users', methods=['GET'])
+@cross_origin()
 def get_all_users():  
 
     users = Users.query.all() 
@@ -107,22 +113,26 @@ def get_all_users():
 
 
 @app.route('/shoes', methods=['POST'])
+@cross_origin()
 @token_required
 def create_shoes(current_user):
-    if(not current_user.admin):
-        return jsonify({'message' : 'you`re not admin'})
+    # if(not current_user.admin):
+    #     return jsonify({'message' : 'you`re not admin'})
 
     data = request.get_json() 
 
     # new_shoes = Shoes(name=data['name'], category=data['category'], price=data['price'], user_id=current_user.id)
+    # try:
     new_shoes = Shoes(name=data['name'], category=data['category'], price=data['price'])  
     db.session.add(new_shoes)   
     db.session.commit()   
 
     return jsonify({'message' : 'new shoes created'})
-
+    # except:
+    #     return jsonify({"message": "shoes with this name already exist"})
 
 @app.route('/buyed-shoes', methods=['GET'])
+@cross_origin()
 @token_required
 def get_buyed_shoes(current_user):
 
@@ -142,6 +152,7 @@ def get_buyed_shoes(current_user):
 
 
 @app.route('/shoes', methods=['GET'])
+@cross_origin()
 def get_shoes():
 
     all_shoes = Shoes.query.all()
@@ -155,15 +166,19 @@ def get_shoes():
         shoes_data['price'] = shoes.price
         output.append(shoes_data)
 
-    return jsonify({'data' : output})
+    return jsonify(output)
 
 
 @app.route('/shoes/<shoes_id>', methods=['DELETE'])
+@cross_origin()
 @token_required
 def delete_shoes(current_user, shoes_id):  
-    if(not current_user.admin):
-        return jsonify({'message' : 'you`re not admin'})
-    shoes = Shoes.query.filter_by(id=shoes_id, user_id=current_user.id).first()   
+    
+    # if(not current_user.admin):
+    #     return jsonify({'message' : 'you`re not admin'})
+    print(shoes_id)
+    shoes = Shoes.query.filter_by(id=shoes_id).first()   
+
     if not shoes:   
         return jsonify({'message': 'shoes does not exist'})   
 
@@ -174,4 +189,4 @@ def delete_shoes(current_user, shoes_id):
 
 
 if  __name__ == '__main__':  
-     app.run(debug=True)
+     app.run(host="0.0.0.0", port="5000",debug=True)
