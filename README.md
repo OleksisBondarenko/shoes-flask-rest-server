@@ -11,7 +11,7 @@ C:\python-flask-rest-server> ./Scripts/activate
 <span style="color:green;">(python-flask-rest-server)</span> C:\python-flask-rest-server> pip install -r requirements.txt
 
 #### 3. Run server: 
-python-flask-rest-server: > <span style="color:green;">(python-flask-rest-server)</span> C:\python-flask-rest-server> python main.py
+<span style="color:green;">(python-flask-rest-server)</span> C:\python-flask-rest-server:> C:\python-flask-rest-server> python main.py
 
 #### 4.(required)  Enjoy!
 
