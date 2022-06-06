@@ -4,16 +4,13 @@
 
 (i use Windows!)
 
-#### 1. Activate virtual enviroment: 
-C:\python-flask-rest-server> ./Scripts/activate
+#### 1. Install dependencies: 
+C:\python-flask-rest-server> pip install -r requirements.txt
 
-#### 2. Install dependencies: 
-<span style="color:green;">(python-flask-rest-server)</span> C:\python-flask-rest-server> pip install -r requirements.txt
+#### 2. Run script: 
+C:\python-flask-rest-server:> C:\python-flask-rest-server> python main.py
 
-#### 3. Run server: 
-<span style="color:green;">(python-flask-rest-server)</span> C:\python-flask-rest-server:> C:\python-flask-rest-server> python main.py
-
-#### 4.(required)  Enjoy!
+#### 3.(required)  Enjoy!
 
 
 
